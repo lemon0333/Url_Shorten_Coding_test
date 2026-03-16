@@ -1,5 +1,7 @@
 plugins {
     id 'java'
+    id 'org.springframework.boot' version '3.2.3' // 또는 3.x 버전
+    id 'io.spring.dependency-management' version '1.1.4'
 }
 
 group = 'org.example'
@@ -13,8 +15,60 @@ dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+// 2. 데이터베이스 & ORM
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'org.postgresql:postgresql' // PostgreSQL 15+ 대응
+    // 3. 캐시 (Redis)
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // 4. QueryDSL (Spring Boot 3.x 설정)
+    implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
+    annotationProcessor "com.querydsl:querydsl-apt:5.0.0:jakarta"
+    annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+    annotationProcessor "jakarta.persistence:jakarta.persistence-api"
+
+    // 5. 마이그레이션 (Flyway)
+    implementation 'org.flywaydb:flyway-core'
+
+    // 유틸리티 (Lombok)
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // 6. 테스트 (JUnit 5 + Mockito 포함)
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // 1. 필수: 웹 서버 구동을 위한 스타터 (현재 빠져있음)
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // 2. 필수: @Valid, @NotBlank 등 데이터 검증용 (과제 품질 향상)
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // 3. 권장: .env 파일을 스프링 환경변수로 읽어주는 라이브러리
+    // 이미지 2.2 제약 조건: "환경 변수는 .env 파일로 관리" 대응용
+    implementation 'io.github.cdimascio:dotenv-java:3.0.0'
+
+    // 4. JSON 변환 유틸 (Snake Case 응답용)
+    // 이미지 3.2 응답 예시가 original_url 처럼 스네이크 케이스임
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
 }
 
 test {
     useJUnitPlatform()
+}
+
+// QueryDSL QClass 생성 위치 설정 (선택 사항)
+def querydslDir = layout.buildDirectory.dir("generated/querydsl").get().asFile
+
+sourceSets {
+    main.java.srcDirs += [ querydslDir ]
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.getGeneratedSourceOutputDirectory().set(querydslDir)
+}
+
+clean {
+    delete file(querydslDir)
 }
